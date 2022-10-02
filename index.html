@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="shortcut icon" href="img/pencil.png" type="image/x-icon">
+    <title>Paint Web 2.0</title>
+</head>
+
+<body>
+    <header>
+        <h1>Paint Web 2.0</h1>
+        <button id="save-button" onclick="saveImage()">İndir 💾</button>
+    </header>
+
+
+    <div id="canvas-container">
+        <canvas width="700px" height="400px" id="canvas">Üzgünüm, Cihaz Desteklenmiyor.</canvas>
+        <!-- <div id="cursor"></div> -->
+    </div>
+
+    <menu>
+        <div id="left-content">
+            <div id="colors-container">
+                <span id="standard-color-container">
+                    <span id='color-buttons'></span>
+                    <p>Sistem Renkleri</p>
+                </span>
+                <div id="hLine"></div>
+                <span id="user-color-container">
+                    <span id='user-color-buttons'></span>
+                    <p>Kullanıcı Renkleri</p>
+                </span>
+
+            </div>
+
+            <span id="color-picker-container"></span>
+
+        </div>
+
+        <div id="right-content">
+
+            <div id="tools-container">
+                <button id="pencil" onclick="setIsPencilOn()">
+                    <img src="./img/pencil.png" width="20px" alt="Pencil">
+                </button>
+                <button id="eraser" onclick="setIsEraserOn()">
+                    <img src="./img/eraser.png" width="20px" alt="Pencil">
+                </button>
+            </div>
+            <span id="size-config">
+                <div id="cursor-size"></div>
+                <span>
+                    <button class="size-button" onclick="increaseSize()">+</button>
+                    <button class="size-button" onclick="decreaseSize()">-</button>
+                </span>
+            </span>
+        </div>
+
+    </menu>
+
+
+
+    <p id="message">Yeni çizim için F5'e basın.</p>
+
+
+
+    <script src="js/app.js"></script>
+    <script>
+
+        let colorBtns = document.getElementById('color-buttons')
+        let userColorBtns = document.getElementById('user-color-buttons')
+        let sizeContainer = document.getElementById('cursor-size')
+        let pencilElem = document.getElementById("pencil")
+        let eraserElem = document.getElementById("eraser")
+        let cPickerContainer = document.getElementById("color-picker-container")
+
+        // Renkli düğmeler:
+        let btnsText = ''
+        colors.forEach((color) => {
+
+            btnsText += `<button
+                            id="btn-${color}"
+                            style = 'background-color: ${color}'
+                            onclick= "handleColorBtn('${color}', this)"
+                            class = ${color == obj.color ? 'color-selected' : 'color-not-selected'}
+                        >
+                        </button>`
+
+        });
+        colorBtns.innerHTML = btnsText
+
+        //Kullanıcının ekleyeceği renkler:
+        function addUserColorsBtns() {
+            let userBtnsText = ''
+            userColors.forEach((color, idx) => {
+
+                userBtnsText += `<button
+                            id="user-btn-${idx}"
+                            style = 'background-color: ${color}'
+                            onclick="handleUserColorBtn('${idx}', this)"
+                            class = ${idx == userColorSelectedID ?
+                        'color-selected' : 'color-not-selected'}
+                        >
+                        </button>`
+
+            });
+            userColorBtns.innerHTML = userBtnsText
+        }
+
+        addUserColorsBtns()
+        // ----------------
+
+
+
+        function handleColorBtn(color, elem) {
+            cPickerContainer.innerHTML = ""
+
+            // "Fırça" rengini değiştirme:
+            obj.color = color
+
+            let buttons = colorBtns.children
+            let userButtons = userColorBtns.children
+
+            for (var c = 0; c < buttons.length; c++) {
+                buttons[c].className = 'color-not-selected'
+            }
+
+            for (var c = 0; c < userButtons.length; c++) {
+                userButtons[c].className = 'color-not-selected'
+            }
+
+            let btn = elem
+            btn.className = 'color-selected'
+            setSizeContainer()
+
+        }
+
+
+        function handleUserColorBtn(colorID, elem) {
+
+            cPickerContainer.innerHTML =
+                "<p>Alterar cor:</p><input id='color-picker' type='color' '/>"
+            let colorPicker = document.getElementById('color-picker')
+
+            userColorSelectedID = colorID
+
+            colorPicker.value = userColors[colorID]
+
+            colorPicker.addEventListener('change', (e) => {
+                userColors[colorID] = colorPicker.value
+                obj.color = userColors[colorID]
+                addUserColorsBtns()
+                setSizeContainer()
+            })
+
+            // "Fırça" rengini değiştirme:
+            obj.color = userColors[colorID]
+
+            let buttons = colorBtns.children
+            let userButtons = userColorBtns.children
+
+            for (var c = 0; c < buttons.length; c++) {
+                buttons[c].className = 'color-not-selected'
+            }
+
+            for (var c = 0; c < userButtons.length; c++) {
+                userButtons[c].className = 'color-not-selected'
+            }
+
+            let btn = elem
+            btn.className = 'color-selected'
+
+            setSizeContainer()
+        }
+
+
+
+
+        function increaseSize() {
+            if (eraser.isActivated) {
+                let aux = eraser.size * 2
+                if (aux <= 80) eraser.size = aux
+            } else {
+                let aux = obj.radius * 2
+                if (aux <= 40) obj.radius = aux
+            }
+            setSizeContainer()
+        }
+        function decreaseSize() {
+            if (eraser.isActivated) {
+                let aux = eraser.size / 2
+                if (aux >= 10) eraser.size = aux
+            } else {
+                let aux = obj.radius / 2
+                if (aux >= 0.5) obj.radius = aux
+            }
+
+            setSizeContainer()
+        }
+
+        function setSizeContainer() {
+            if (eraser.isActivated) {
+                sizeContainer.style = `background-color: #FFF; left: -${45 + eraser.size / 2}px; 
+                                width: ${eraser.size}px; height: ${eraser.size}px; 
+                                border-radius: 1px;`
+            } else {
+                sizeContainer.style = `background-color: ${obj.color}; left: -${45 + obj.radius}px; 
+                                width: ${obj.radius * 2}px; height: ${obj.radius * 2}px;`
+
+            }
+        }
+
+
+
+        function setIsEraserOn() {
+            eraser.isActivated = true
+
+            eraserElem.style = "transform: scale(1.4);" +
+                "box-shadow: 0px 0px 3px #0008;background: rgba(255, 255, 255, 0.2);"
+            pencilElem.style = "transform: scale(1)"
+
+            setSizeContainer()
+        }
+
+        function setIsPencilOn() {
+            eraser.isActivated = false
+
+            pencilElem.style = "transform: scale(1.4);" +
+                "box-shadow: 0px 0px 3px #0008;background: rgba(255, 255, 255, 0.2);"
+            eraserElem.style = "transform: scale(1)"
+
+            setSizeContainer()
+        }
+
+        function saveImage() {
+            try {
+                var image = canvas.toDataURL("image/png", 1.0).replace("image/png", "image/octet-stream");
+                window.location.href = image;
+
+                alert("Başyapıtınız İndirilenler'e kaydedildi! 🥳😻");
+            } catch (error) {
+                alert("Hata! Çiziminizi kaydetmeye çalışırken bir şeyler ters gitti!😵😿");
+                console.log(error);
+            }
+
+        }
+
+        setSizeContainer()
+        setIsPencilOn()
+
+
+    </script>
+
+</body>
+
+</html>
